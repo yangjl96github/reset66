@@ -70,6 +70,14 @@ PM 拆 WBS → 建 Issues → DEV 在分支 mN 實作 + UT → 開 PR
 - `main` = 已部署到 iPhone 的版本,只能由 PM 透過 PR merge。
 - Commit 訊息:`feat(M3): ...`、`fix(M3): ...`、`test(M3): ...`、`docs: ...`,並在訊息中引用 Issue(`Refs #12`、修好用 `Fixes #12`)。
 
+### 版本號(對外溝通必寫)
+- 版本由兩個號碼組成,寫法跟 app「設定 → 關於 → 版本」完全一樣:`0.3.0 · reset66-v3`(app 版本 `src/version.js` + 快取版本 `sw.js` 的 `CACHE_VERSION`)。
+- **以下場合都要寫出版本號**,讓 Gerald 能直接跟手機畫面比對:
+  - 交談給 Gerald 的回報(上線、測試結果、請他測試、結案);
+  - PR 標題與內容、merge 後的 Issue 留言、SIT / UAT 報告與 iPhone 清單開頭;
+  - 交談名稱(例如 `m4-dev · 0.4.0`)。
+- 規則:每個里程碑上線提升 minor(M4 = `0.4.0`);上線後的 bug 修正提升 patch(`0.4.1`);只要 `sw.js` 快取內容變動就提升 `CACHE_VERSION`。版本歷程記在 `docs/handoff/pmo.md`。
+
 ### Issues
 - 標題格式:`[M3] 簡述`。
 - Labels:類型 `task` / `bug`;負責 `dev` / `sit` / `uat`;嚴重度(bug 才需要)`blocker` / `critical` / `major` / `minor`。

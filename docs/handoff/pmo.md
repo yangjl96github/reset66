@@ -1,7 +1,7 @@
 # PM 交接文件
 
 > 給承接的 PM 交談:依序讀 `CLAUDE.md` → `docs/process.md` → 本文件 → GitHub Issues(`gh issue list -R yangjl96github/reset66 --milestone M3`)。
-> 最後更新:2026-11-15(PM 交談 #1,M3 已上線、UAT 進行中)
+> 最後更新:2026-11-15(PM 交談 #1,M3 已結案,線上版本 `0.3.0 · reset66-v3`)
 
 ## 1. 專案現況
 
@@ -9,12 +9,20 @@
 |---|---|
 | 線上網址 | https://yangjl96github.github.io/reset66/ |
 | Repo | https://github.com/yangjl96github/reset66(public,`main` = 已部署版本) |
-| 目前版本 | `0.3.0`,`sw.js` `CACHE_VERSION = 'v3'`,`schemaVersion = 2`(已部署,merge commit `fe59430`) |
+| 目前版本 | **`0.3.0 · reset66-v3`**(app 設定頁顯示的字樣),`schemaVersion = 2`(已部署,merge commit `fe59430`) |
 | 測試 | `npm test`:11 檔 205 tests 全綠;SIT 報告 `docs/test/M3-sit.md`(25/25 + 回歸) |
 | M0 | 完成,Gerald iPhone 驗收通過 |
 | M1 | 完成(`dates` / `progress` / `streak` / `xp` 純函式 + UT) |
-| M2 | 完成並部署(引導、今日頁、習慣管理);**Gerald 的 iPhone 驗收尚未回報** |
-| M3 | PR #8 已 merge 並部署;#1–#6 已關閉;**#7 UAT 進行中**,待 Gerald iPhone 測試與結案 |
+| M2 | 完成並部署(引導、今日頁、習慣管理);Gerald 已在 iPhone 上用 M3 版本正常使用,視同通過 |
+| M3 | **已結案(2026-11-15)**:PR #8 merge、#1–#7 關閉、Milestone M3 關閉;Gerald iPhone 確認設定頁顯示 `0.3.0 · reset66-v3` |
+
+### 版本歷程(對照 app「設定 → 關於 → 版本」)
+| 版本 | 里程碑 | 上線 commit | 備註 |
+|---|---|---|---|
+| `0.1.0 · reset66-v1` | M0 骨架 | `b4010de` | |
+| `0.2.0 · reset66-v2` | M2 基本 UI | `61322a0` | M1 是純邏輯,無獨立版本 |
+| `0.3.0 · reset66-v3` | M3 持久化與備份 | `fe59430` | schema v2 |
+| `0.4.0 · reset66-v4`(預定) | M4 統計與打磨 | — | |
 | M4 / M5 | Milestone 已建立,尚未拆 WBS;M4 已有 #9(損毀副本可下載);M5 的 Sheets 備份是否要做,待 M4 完成後問 Gerald |
 
 ## 2. 角色與運作(摘要,完整見 `docs/process.md`)
@@ -33,6 +41,7 @@
 | 2026-11-15 | M3:schema v2 新增 `meta.lastExportAt`;匯入前自動備份(保留 3 份);14 天匯出提醒 |
 | 2026-11-15 | M3 實作決策 D1–D5(見 `docs/wbs/M3.md`);QA 建議的 SW precache `cache: 'reload'` 於 merge 前修正(`84464ff`) |
 | 2026-11-15 | QA 對自己帳號的 PR 無法按 Approve,改以 review comment 首行 `QA verdict: APPROVED` 作為核准依據 |
+| 2026-11-15 | M3 由 Gerald 結案;對外溝通一律寫出版本號(`0.3.0 · reset66-v3` 格式,見 `docs/process.md`) |
 | 2026-11-15 | Merge 用 merge commit(非 squash),以便 `git revert -m 1` 回滾;已 merge 的里程碑分支暫不刪(刪除需 Gerald 同意) |
 
 ## 4. 環境注意事項
@@ -43,16 +52,16 @@
 - Commit 訊息結尾需加 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`。
 
 ## 5. 進行中 / 下一步
-1. UAT 交談做 #7:PC UAT + 產出 `docs/uat/M3-iphone.md`(需含 QA 提醒:分享失敗退回下載時,iOS 是否真的存到檔案)。
-2. Gerald 依清單做 iPhone UAT,結果回報 PM → UAT 交談登錄 → 有 bug 則 DEV 在新分支修、QA 重測、PM merge。
-3. Gerald 結案 M3 → 關閉 #7 與 Milestone M3 → 更新本文件 → 提醒 Gerald 開新的 PM 交談(本交談已很長)。
-4. 追問 Gerald M2 的 iPhone 驗收結果。
-5. 告知 Gerald:手機若還是 M0/M2 版本,第一次打開會更新;從 M0(v1)升級需要多開一次 app 才會換成新版。
+1. **開發暫停在 M3**(Gerald 指示),未經他同意不開始 M4。
+2. 提醒 Gerald 在 iPhone 上實際匯出一次備份到「檔案」App(結案截圖顯示「尚未匯出過」;QA 提醒的分享面板路徑也藉此確認)。
+3. M4 開工時:拆 WBS(`docs/wbs/M4.md`),把 UAT 的 UX 建議開成 Issue(匯入預覽並列現有資料、自動備份可見/可還原併 #9、「從備份還原」位置上移、錯誤頁兩顆按鈕、「持久化儲存」用語、提醒跳轉後的焦點)。
+4. M5 Sheets 備份是否要做,M4 完成後問 Gerald。
+5. 所有回報依 `docs/process.md`「版本號」規則寫出版本號。
 
 ## 6. 交談清單
 | 角色 | 交談 | 狀態 |
 |---|---|---|
-| PM | PM #1(本交談) | 進行中 |
+| PM | PM #1 | M3 結案,建議開新的 PM 交談承接 |
 | DEV | `m3-dev`(local_bbcf4ed3…) | M3 完成,閒置 |
 | QA | `m3-qa`(local_9c0d3c35…) | M3 完成,閒置 |
-| UAT | `m3-uat` | 開啟中 |
+| UAT | `m3-uat` | M3 完成,閒置 |
