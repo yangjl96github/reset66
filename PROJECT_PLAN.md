@@ -92,6 +92,7 @@ reset66/
       "xp": 10,
       "days": [0,1,2,3,4,5,6],      // 0=週日,預設每天
       "archived": false,
+      "archivedAt": null,           // 封存日 YYYY-MM-DD;當天起不再計入,之前的紀錄保留
       "createdAt": "2026-11-15"
     }
   ],
@@ -112,16 +113,20 @@ reset66/
 - 當日「應做習慣」(排除 skipped 與非排程日)完成比例 ≥ `completionThreshold` 即為完成日。
 - **進度以「完成日數」計算**,不是日曆天數。達到 66 個完成日即結業。
   (設計依據:習慣形成研究的重點是重複次數;研究也顯示漏一天影響很小。)
+- 應做習慣數為 0 的日子(全部 skipped 或當天沒排程)為「休息日」:不算完成日、不斷 streak、不消耗寬容。
+- 今天尚未達標時為「進行中」,不會斷 streak。
+- 完成日至少要有 1 個習慣完成(避免 `completionThreshold = 0` 時空白日也算數)。
 
 ### Streak(連續天數)
 - 連續完成日數。
 - 寬容規則:任意滾動 7 天內最多漏 `graceDays` 天,不斷 streak(但該日不計入完成日)。
 - 設定 `graceDays = 0` 即為嚴格模式(類似「困難模式」)。
+- 視窗定義:以漏掉的那天為結尾往前 7 天(含當天);streak 為 0 時漏掉不計。
 
 ### XP 與等級
 - 每完成一個習慣:`+habit.xp`(預設 10)。
-- 當日全數完成:`+20` 額外獎勵。
-- Streak 獎勵:每滿 7 天一次性 `+50`。
+- 當日全數完成:`+20` 額外獎勵(skipped 不算在內;只達 threshold 不算全數完成)。
+- Streak 獎勵:streak 每到 7 的倍數時 `+50`;斷掉後重新累積到 7 會再給一次。
 - 等級門檻(累積 XP 達到才升級):`xpToReach(L) = 50 * L * (L - 1)`
   - L1=0、L2=100、L3=300、L4=600、L5=1000 …
 - 數值全部集中在 `logic/xp.js` 頂部的常數,方便調整。
@@ -131,16 +136,16 @@ reset66/
 ## 6. 里程碑與驗收標準
 
 ### M0 — 骨架與部署
-- [ ] `index.html`、`manifest.webmanifest`、`sw.js`、基本樣式
-- [ ] 原創 app 圖示(SVG 轉 PNG:192、512、maskable、180 apple-touch)
-- [ ] 部署到 GitHub Pages(或 Cloudflare Pages)
+- [x] `index.html`、`manifest.webmanifest`、`sw.js`、基本樣式
+- [x] 原創 app 圖示(SVG 轉 PNG:192、512、maskable、180 apple-touch)
+- [x] 部署到 GitHub Pages(或 Cloudflare Pages)
 - **驗收**:iPhone Safari 開啟 → 加入主畫面 → 全螢幕開啟;開飛航模式仍可開啟。
 
 ### M1 — 核心邏輯(純函式 + 測試)
-- [ ] `dates.js`:本地日期字串、`dayBoundaryHour` 處理、日期區間
-- [ ] `progress.js`:完成日判定、Day X/66
-- [ ] `streak.js`:含寬容規則
-- [ ] `xp.js`:XP 與等級
+- [x] `dates.js`:本地日期字串、`dayBoundaryHour` 處理、日期區間
+- [x] `progress.js`:完成日判定、Day X/66
+- [x] `streak.js`:含寬容規則
+- [x] `xp.js`:XP 與等級
 - **驗收**:`npm test` 全綠;至少涵蓋——跨午夜邊界、漏一天寬容、連漏兩天斷掉、全部 skipped 的日子、閏年/月底。
 
 ### M2 — 基本 UI
