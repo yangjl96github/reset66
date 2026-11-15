@@ -12,6 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Reset66">
+  <meta name="format-detection" content="telephone=no">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 
   <link rel="manifest" href="./manifest.webmanifest">
@@ -23,20 +24,29 @@
 <body>
   <header class="app-header">
     <h1 class="app-title">Reset66</h1>
-    <span id="net-status" class="pill" aria-live="polite"></span>
+    <span id="net-status" class="pill" aria-live="polite" hidden></span>
   </header>
 
-  <main id="app" class="app-main">
-    <section class="card">
-      <h2>66 天,從明天開始</h2>
-      <p class="muted">骨架已就緒。今日清單、習慣管理與統計將在後續里程碑加入。</p>
-    </section>
-  </main>
+  <main id="app" class="app-main"></main>
 
-  <footer class="app-footer">
-    <span class="muted">版本 <span id="app-version"></span></span>
-  </footer>
+  <nav id="tabbar" class="tabbar" aria-label="主要導覽" hidden>
+    <a href="#/today" data-route="today">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><polyline points="8,12.5 11,15.5 16.5,9.5"/></svg>
+      <span>今日</span>
+    </a>
+    <a href="#/habits" data-route="habits">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="9" y1="7" x2="20" y2="7"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="17" x2="20" y2="17"/><circle cx="4.5" cy="7" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17" r="1"/></svg>
+      <span>習慣</span>
+    </a>
+    <a href="#/settings" data-route="settings">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.5" fill="var(--bg)"/><circle cx="15" cy="17" r="2.5" fill="var(--bg)"/></svg>
+      <span>設定</span>
+    </a>
+  </nav>
 
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <noscript><p class="card">需要啟用 JavaScript 才能使用 Reset66。</p></noscript>
   <script type="module" src="./src/main.js"></script>
 </body>
 </html>

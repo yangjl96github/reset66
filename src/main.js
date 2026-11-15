@@ -1,17 +1,138 @@
-// Entry point: service worker registration and app shell wiring.
+// Entry point: state ownership, routing, rendering and service worker registration.
 import { APP_VERSION } from './version.js';
+import { loadState, saveState } from './store.js';
+import { logicalDate } from './logic/dates.js';
+import { DEFAULT_PROGRAM } from './logic/state.js';
+import { renderOnboarding } from './ui/onboarding.js';
+import { renderToday } from './ui/today.js';
+import { renderHabits } from './ui/habits.js';
+import { renderSettings } from './ui/settings.js';
 
-const versionEl = document.getElementById('app-version');
+const root = document.getElementById('app');
+const tabbar = document.getElementById('tabbar');
+const toastEl = document.getElementById('toast');
 const netEl = document.getElementById('net-status');
 
-versionEl.textContent = APP_VERSION;
+const loaded = loadState();
+const app = {
+  state: loaded.state,
+  loadError: loaded.error ?? null,
+  viewDate: null, // date being viewed on the Today page (null = today)
+  lastToday: null,
+  swCache: null,
+};
+
+const ROUTES = {
+  today: renderToday,
+  habits: renderHabits,
+  settings: renderSettings,
+};
+
+function currentToday() {
+  const hour = app.state?.program?.dayBoundaryHour ?? DEFAULT_PROGRAM.dayBoundaryHour;
+  return logicalDate(new Date(), hour);
+}
+
+function currentRoute() {
+  const name = location.hash.replace(/^#\/?/, '');
+  return Object.hasOwn(ROUTES, name) ? name : 'today';
+}
+
+function newId() {
+  const raw = crypto.randomUUID ? crypto.randomUUID() : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+  return `h_${raw.replace(/-/g, '').slice(0, 12)}`;
+}
+
+let toastTimer = null;
+function toast(message, tone = 'info') {
+  toastEl.textContent = message;
+  toastEl.dataset.tone = tone;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2400);
+}
+
+function commit(next) {
+  app.state = next;
+  if (!saveState(next)) toast('無法寫入儲存空間,這次變更可能不會保留', 'error');
+  render();
+}
+
+function navigate(route) {
+  const hash = `#/${route}`;
+  if (location.hash === hash) render();
+  else location.hash = hash;
+}
+
+function versionLabel() {
+  return app.swCache ? `${APP_VERSION} · ${app.swCache}` : APP_VERSION;
+}
+
+function makeContext(today) {
+  return {
+    get state() {
+      return app.state;
+    },
+    today,
+    loadError: app.loadError,
+    viewDate: app.viewDate,
+    setViewDate(date) {
+      app.viewDate = date;
+      render();
+    },
+    commit,
+    navigate,
+    toast,
+    newId,
+    versionLabel,
+  };
+}
+
+function render() {
+  const today = currentToday();
+  app.lastToday = today;
+
+  // Keep keyboard/VoiceOver focus on the same control across re-renders.
+  const focusKey = document.activeElement?.dataset?.focusKey;
+
+  if (!app.state) {
+    tabbar.hidden = true;
+    renderOnboarding(root, makeContext(today));
+  } else {
+    tabbar.hidden = false;
+    const route = currentRoute();
+    for (const link of tabbar.querySelectorAll('a[data-route]')) {
+      if (link.dataset.route === route) link.setAttribute('aria-current', 'page');
+      else link.removeAttribute('aria-current');
+    }
+    ROUTES[route](root, makeContext(today));
+  }
+
+  if (focusKey) root.querySelector(`[data-focus-key="${CSS.escape(focusKey)}"]`)?.focus({ preventScroll: true });
+}
+
+function refreshIfDayChanged() {
+  if (currentToday() !== app.lastToday) {
+    app.viewDate = null;
+    render();
+  }
+}
+
+window.addEventListener('hashchange', () => {
+  app.viewDate = null;
+  render();
+  window.scrollTo(0, 0);
+});
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refreshIfDayChanged();
+});
+setInterval(refreshIfDayChanged, 60_000);
 
 function renderNetStatus() {
   const online = navigator.onLine;
-  netEl.textContent = online ? '線上' : '離線';
-  netEl.dataset.state = online ? 'online' : 'offline';
+  netEl.textContent = online ? '' : '離線';
+  netEl.hidden = online;
 }
-
 window.addEventListener('online', renderNetStatus);
 window.addEventListener('offline', renderNetStatus);
 renderNetStatus();
@@ -19,18 +140,25 @@ renderNetStatus();
 async function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   try {
-    const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
-    const sw = reg.active || reg.waiting || reg.installing;
+    const hadController = Boolean(navigator.serviceWorker.controller);
     navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data?.type === 'VERSION') {
-        versionEl.textContent = `${APP_VERSION} · ${event.data.cache}`;
+      if (event.data?.type === 'VERSION') app.swCache = event.data.cache;
+    });
+    // A new version took over: reload once so the page runs the new code.
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hadController && !reloaded) {
+        reloaded = true;
+        location.reload();
       }
     });
-    await navigator.serviceWorker.ready;
-    (navigator.serviceWorker.controller || sw)?.postMessage('GET_VERSION');
+    await navigator.serviceWorker.register('./sw.js', { scope: './' });
+    const reg = await navigator.serviceWorker.ready;
+    (navigator.serviceWorker.controller || reg.active)?.postMessage('GET_VERSION');
   } catch (err) {
     console.warn('Service worker registration failed:', err);
   }
 }
 
+render();
 registerServiceWorker();

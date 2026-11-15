@@ -1,6 +1,6 @@
 // Reset66 service worker: cache-first for same-origin static assets.
 // IMPORTANT: bump CACHE_VERSION whenever PRECACHE contents change.
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `reset66-${CACHE_VERSION}`;
 
 const PRECACHE = [
@@ -10,6 +10,20 @@ const PRECACHE = [
   './manifest.webmanifest',
   './src/main.js',
   './src/version.js',
+  './src/store.js',
+  './src/logic/dates.js',
+  './src/logic/progress.js',
+  './src/logic/streak.js',
+  './src/logic/xp.js',
+  './src/logic/state.js',
+  './src/logic/seed.js',
+  './src/ui/dom.js',
+  './src/ui/format.js',
+  './src/ui/habit-form.js',
+  './src/ui/onboarding.js',
+  './src/ui/today.js',
+  './src/ui/habits.js',
+  './src/ui/settings.js',
   './icons/icon.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
