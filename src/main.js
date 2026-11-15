@@ -1,12 +1,14 @@
 // Entry point: state ownership, routing, rendering and service worker registration.
 import { APP_VERSION } from './version.js';
-import { loadState, saveState } from './store.js';
+import { LoadError, loadState, saveState, snapshotCurrentData } from './store.js';
 import { logicalDate } from './logic/dates.js';
 import { DEFAULT_PROGRAM } from './logic/state.js';
 import { renderOnboarding } from './ui/onboarding.js';
 import { renderToday } from './ui/today.js';
 import { renderHabits } from './ui/habits.js';
 import { renderSettings } from './ui/settings.js';
+import { h } from './ui/dom.js';
+import { ensurePersistentStorage } from './persist.js';
 
 const root = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -20,6 +22,8 @@ const app = {
   viewDate: null, // date being viewed on the Today page (null = today)
   lastToday: null,
   swCache: null,
+  persistStatus: null, // null until the StorageManager answers
+  pendingFocus: null, // focus key to focus after the next route render
 };
 
 const ROUTES = {
@@ -52,10 +56,36 @@ function toast(message, tone = 'info') {
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2400);
 }
 
+function requestPersistence() {
+  ensurePersistentStorage().then((status) => {
+    app.persistStatus = status;
+    if (app.state && currentRoute() === 'settings') render();
+  });
+}
+
 function commit(next) {
+  const firstSave = !app.state;
   app.state = next;
   if (!saveState(next)) toast('無法寫入儲存空間,這次變更可能不會保留', 'error');
   render();
+  if (firstSave) requestPersistence();
+}
+
+/**
+ * Replace all data with an imported state. The current stored data is copied to a
+ * backup key first; if that copy cannot be written, nothing is overwritten.
+ * @returns {boolean} true when the import was saved
+ */
+function importState(next) {
+  if (!snapshotCurrentData(new Date()).ok) return false;
+  if (!saveState(next)) return false;
+  const firstSave = !app.state;
+  app.state = next;
+  app.loadError = null;
+  app.viewDate = null;
+  navigate('today');
+  if (firstSave) requestPersistence();
+  return true;
 }
 
 function navigate(route) {
@@ -81,11 +111,32 @@ function makeContext(today) {
       render();
     },
     commit,
+    importState,
     navigate,
+    goToExport() {
+      app.pendingFocus = 'export';
+      navigate('settings');
+    },
     toast,
     newId,
     versionLabel,
+    get persistStatus() {
+      return app.persistStatus;
+    },
   };
+}
+
+function renderTooNew() {
+  root.replaceChildren(
+    h(
+      'section',
+      { class: 'card' },
+      h('h2', { class: 'card-title' }, '請先更新 app'),
+      h('p', null, '這台裝置上的資料是由較新版本的 Reset66 建立的,目前的版本無法讀取。資料沒有被更動。'),
+      h('p', { class: 'muted' }, '請連上網路後重新整理;若仍看到這個畫面,請關閉 app 再重新開啟。'),
+      h('button', { class: 'btn btn-primary btn-block', type: 'button', onClick: () => location.reload() }, '重新整理')
+    )
+  );
 }
 
 function render() {
@@ -95,7 +146,11 @@ function render() {
   // Keep keyboard/VoiceOver focus on the same control across re-renders.
   const focusKey = document.activeElement?.dataset?.focusKey;
 
-  if (!app.state) {
+  if (app.loadError === LoadError.TOO_NEW) {
+    // Stored data is from a newer version: show nothing that could write over it.
+    tabbar.hidden = true;
+    renderTooNew();
+  } else if (!app.state) {
     tabbar.hidden = true;
     renderOnboarding(root, makeContext(today));
   } else {
@@ -108,6 +163,15 @@ function render() {
     ROUTES[route](root, makeContext(today));
   }
 
+  if (app.pendingFocus && app.state) {
+    const target = root.querySelector(`[data-focus-key="${app.pendingFocus}"]`);
+    app.pendingFocus = null;
+    if (target) {
+      target.focus({ preventScroll: true });
+      target.scrollIntoView({ block: 'center' });
+      return;
+    }
+  }
   if (focusKey) root.querySelector(`[data-focus-key="${CSS.escape(focusKey)}"]`)?.focus({ preventScroll: true });
 }
 
@@ -161,4 +225,5 @@ async function registerServiceWorker() {
 }
 
 render();
+if (app.state) requestPersistence();
 registerServiceWorker();

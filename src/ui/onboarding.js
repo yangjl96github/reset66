@@ -4,6 +4,7 @@ import { shortDate } from './format.js';
 import { addDays, isValidDateStr } from '../logic/dates.js';
 import { SEED_HABITS } from '../logic/seed.js';
 import { HABIT_LIMITS, createHabit, createInitialState, normalizeHabitInput } from '../logic/state.js';
+import { importButton } from './backup.js';
 
 export function renderOnboarding(root, ctx) {
   const { today } = ctx;
@@ -149,7 +150,14 @@ export function renderOnboarding(root, ctx) {
         h('div', { class: 'inline-add' }, customInput, h('button', { class: 'btn', type: 'button', onClick: addCustom }, icon(ICONS.plus), '加入'))
       ),
       errorEl,
-      h('button', { class: 'btn btn-primary btn-block btn-large', type: 'submit' }, '開始計畫')
+      h('button', { class: 'btn btn-primary btn-block btn-large', type: 'submit' }, '開始計畫'),
+      h(
+        'section',
+        { class: 'card restore' },
+        h('h3', { class: 'card-title' }, '已經有備份?'),
+        h('p', { class: 'hint' }, '換手機或清除資料後,可以從先前匯出的 JSON 備份還原。'),
+        importButton(ctx, { label: '從備份還原' })
+      )
     )
   );
 }

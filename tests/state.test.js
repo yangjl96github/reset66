@@ -85,15 +85,16 @@ describe('createHabit / createInitialState', () => {
     expect(() => createHabit({ title: 'a' }, { id: 'x', createdAt: 'bad' })).toThrow(RangeError);
   });
 
-  it('creates a v1 state with default program settings', () => {
+  it('creates a v2 state with default program settings', () => {
     const h = createHabit({ title: 'a' }, { id: 'h_1', createdAt: '2026-11-15' });
     const state = createInitialState({ startDate: '2026-11-16', habits: [h] });
     expect(state).toEqual({
-      schemaVersion: 1,
+      schemaVersion: 2,
       program: { startDate: '2026-11-16', ...DEFAULT_PROGRAM },
       habits: [h],
       logs: {},
       profile: { bonusXp: 0 },
+      meta: { lastExportAt: null },
     });
     expect(state.habits[0]).not.toBe(h);
   });
