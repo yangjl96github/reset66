@@ -1,10 +1,12 @@
 // Backup file format: build, serialise and parse the export envelope.
 // Pure module: no DOM, no storage, no implicit "now" (instants and dates are passed in).
+import { diffDays } from './dates.js';
 import { SchemaErrorCode, upgradeState } from './schema.js';
 
 export const BACKUP_APP = 'reset66';
 export const BACKUP_FORMAT = 1;
 export const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
+export const EXPORT_REMIND_DAYS = 14;
 
 export const ImportErrorCode = Object.freeze({
   NOT_JSON: 'notJson',
@@ -101,4 +103,21 @@ export function summarizeBackup(state) {
     archivedCount: state.habits.filter((h) => h.archived).length,
     loggedDays: Object.values(state.logs).filter((day) => Object.keys(day).length > 0).length,
   };
+}
+
+/** Days since the last export, or null when the data has never been exported. */
+export function daysSinceExport(state, today) {
+  const last = state.meta?.lastExportAt;
+  return last ? diffDays(last, today) : null;
+}
+
+/**
+ * Remind to export once the programme has started and EXPORT_REMIND_DAYS have passed
+ * since the last export (or since the start date when never exported).
+ */
+export function shouldRemindExport(state, today) {
+  const { startDate } = state.program;
+  if (today < startDate) return false;
+  const since = state.meta?.lastExportAt ?? startDate;
+  return diffDays(since, today) >= EXPORT_REMIND_DAYS;
 }

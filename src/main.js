@@ -23,6 +23,7 @@ const app = {
   lastToday: null,
   swCache: null,
   persistStatus: null, // null until the StorageManager answers
+  pendingFocus: null, // focus key to focus after the next route render
 };
 
 const ROUTES = {
@@ -112,6 +113,10 @@ function makeContext(today) {
     commit,
     importState,
     navigate,
+    goToExport() {
+      app.pendingFocus = 'export';
+      navigate('settings');
+    },
     toast,
     newId,
     versionLabel,
@@ -158,6 +163,15 @@ function render() {
     ROUTES[route](root, makeContext(today));
   }
 
+  if (app.pendingFocus && app.state) {
+    const target = root.querySelector(`[data-focus-key="${app.pendingFocus}"]`);
+    app.pendingFocus = null;
+    if (target) {
+      target.focus({ preventScroll: true });
+      target.scrollIntoView({ block: 'center' });
+      return;
+    }
+  }
   if (focusKey) root.querySelector(`[data-focus-key="${CSS.escape(focusKey)}"]`)?.focus({ preventScroll: true });
 }
 

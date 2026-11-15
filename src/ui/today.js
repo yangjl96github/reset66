@@ -6,6 +6,19 @@ import { DayStatus, LogStatus, dueHabits, evaluateDay, getHistory, getProgress }
 import { computeStreak } from '../logic/streak.js';
 import { FULL_DAY_BONUS, computeXp } from '../logic/xp.js';
 import { activeHabits, getLogStatus, toggleDone, toggleSkipped } from '../logic/state.js';
+import { daysSinceExport, shouldRemindExport } from '../logic/backup.js';
+
+function exportReminder(state, today, goToExport) {
+  if (!shouldRemindExport(state, today)) return null;
+  const days = daysSinceExport(state, today);
+  const text = days === null ? '還沒有備份過資料,建議匯出一份備份。' : `距離上次備份已經 ${days} 天,建議再匯出一份。`;
+  return h(
+    'button',
+    { class: 'reminder', type: 'button', onClick: goToExport },
+    h('span', null, text),
+    h('span', { class: 'reminder-action' }, '前往匯出', icon(ICONS.chevronRight))
+  );
+}
 
 function progressBar(ratio, label, className = '') {
   const pct = Math.round(Math.max(0, Math.min(1, ratio)) * 100);
@@ -170,7 +183,7 @@ export function renderToday(root, ctx) {
   const streak = computeStreak(history, state.program.graceDays ?? 1);
   const xp = computeXp(state, today, history, streak);
 
-  const children = [summaryCard(state, today, progress, streak, xp)];
+  const children = [exportReminder(state, today, ctx.goToExport), summaryCard(state, today, progress, streak, xp)].filter(Boolean);
 
   if (!progress.started) {
     children.push(preStartList(state));
