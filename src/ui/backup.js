@@ -52,7 +52,11 @@ function downloadFile(file) {
 
 /** Serialise the current state and hand it to the share sheet or a download. */
 export async function exportBackup(ctx) {
-  const backup = buildBackup(ctx.state, { appVersion: APP_VERSION, exportedAt: toLocalIsoString(new Date()) });
+  const backup = buildBackup(ctx.state, {
+    appVersion: APP_VERSION,
+    exportedAt: toLocalIsoString(new Date()),
+    exportDate: ctx.today,
+  });
   const file = new File([serializeBackup(backup)], backupFileName(ctx.today), { type: 'application/json' });
 
   if (shouldUseShareSheet(file)) {

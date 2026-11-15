@@ -1,6 +1,6 @@
 // Backup file format: build, serialise and parse the export envelope.
 // Pure module: no DOM, no storage, no implicit "now" (instants and dates are passed in).
-import { diffDays } from './dates.js';
+import { diffDays, isValidDateStr } from './dates.js';
 import { SchemaErrorCode, upgradeState } from './schema.js';
 
 export const BACKUP_APP = 'reset66';
@@ -34,14 +34,20 @@ export function backupFileName(date) {
   return `reset66-backup-${date}.json`;
 }
 
-/** Envelope around a deep copy of the full state. */
-export function buildBackup(state, { appVersion, exportedAt }) {
+/**
+ * Envelope around a deep copy of the full state. The copy is stamped with
+ * meta.lastExportAt = exportDate, so it equals the app state after a successful export
+ * and a restored backup does not immediately trigger the export reminder.
+ * @param {{appVersion: string, exportedAt: string, exportDate: string}} opts exportDate = logical YYYY-MM-DD
+ */
+export function buildBackup(state, { appVersion, exportedAt, exportDate }) {
+  if (!isValidDateStr(exportDate)) throw new RangeError(`Invalid exportDate: ${exportDate}`);
   return {
     app: BACKUP_APP,
     format: BACKUP_FORMAT,
     appVersion,
     exportedAt,
-    data: JSON.parse(JSON.stringify(state)),
+    data: JSON.parse(JSON.stringify(markExported(state, exportDate))),
   };
 }
 

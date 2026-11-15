@@ -8,6 +8,7 @@ import {
   markExported,
   parseBackup,
   serializeBackup,
+  shouldRemindExport,
   summarizeBackup,
   toLocalIsoString,
 } from '../src/logic/backup.js';
@@ -19,7 +20,8 @@ const sample = () =>
     logs: { '2026-11-16': { a: 'done', b: 'done' }, '2026-11-17': { a: 'skipped' } },
   });
 
-const meta = { appVersion: '0.3.0', exportedAt: '2026-11-20T21:05:00+08:00' };
+const meta = { appVersion: '0.3.0', exportedAt: '2026-11-20T21:05:00+08:00', exportDate: '2026-11-20' };
+const { exportDate: _d, ...envelopeMeta } = meta;
 
 describe('toLocalIsoString', () => {
   it('formats with the local offset at second precision', () => {
@@ -37,9 +39,29 @@ describe('backupFileName', () => {
 });
 
 describe('buildBackup', () => {
-  it('wraps the full state in the envelope', () => {
+  it('wraps the full state, stamped with the export date, in the envelope', () => {
     const state = sample();
-    expect(buildBackup(state, meta)).toEqual({ app: BACKUP_APP, format: BACKUP_FORMAT, ...meta, data: state });
+    expect(buildBackup(state, meta)).toEqual({
+      app: BACKUP_APP,
+      format: BACKUP_FORMAT,
+      ...envelopeMeta,
+      data: { ...state, meta: { lastExportAt: '2026-11-20' } },
+    });
+  });
+
+  it('equals the app state right after a successful export', () => {
+    const state = sample();
+    expect(buildBackup(state, meta).data).toEqual(markExported(state, meta.exportDate));
+  });
+
+  it('leaves the input state unstamped', () => {
+    const state = sample();
+    buildBackup(state, meta);
+    expect(state.meta.lastExportAt).toBeNull();
+  });
+
+  it('requires a valid export date', () => {
+    expect(() => buildBackup(sample(), { ...meta, exportDate: undefined })).toThrow(RangeError);
   });
 
   it('copies the state instead of referencing it', () => {
@@ -62,10 +84,17 @@ describe('markExported', () => {
 });
 
 describe('parseBackup', () => {
-  it('round-trips an exported file to a deep-equal state', () => {
+  it('round-trips an exported file to the state right after export', () => {
     const state = sample();
     const result = parseBackup(serializeBackup(buildBackup(state, meta)));
-    expect(result).toEqual({ ok: true, state, exportedAt: meta.exportedAt, appVersion: '0.3.0' });
+    expect(result).toEqual({ ok: true, state: markExported(state, meta.exportDate), exportedAt: meta.exportedAt, appVersion: '0.3.0' });
+  });
+
+  it('a freshly restored backup does not trigger the export reminder', () => {
+    const state = makeState({ program: { startDate: '2026-10-01' } });
+    const { state: restored } = parseBackup(serializeBackup(buildBackup(state, meta)));
+    expect(shouldRemindExport(state, meta.exportDate)).toBe(true);
+    expect(shouldRemindExport(restored, meta.exportDate)).toBe(false);
   });
 
   it('accepts a bare state file and migrates v1 data', () => {
