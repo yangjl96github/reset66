@@ -1,12 +1,13 @@
 // Entry point: state ownership, routing, rendering and service worker registration.
 import { APP_VERSION } from './version.js';
-import { loadState, saveState } from './store.js';
+import { LoadError, loadState, saveState } from './store.js';
 import { logicalDate } from './logic/dates.js';
 import { DEFAULT_PROGRAM } from './logic/state.js';
 import { renderOnboarding } from './ui/onboarding.js';
 import { renderToday } from './ui/today.js';
 import { renderHabits } from './ui/habits.js';
 import { renderSettings } from './ui/settings.js';
+import { h } from './ui/dom.js';
 
 const root = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -88,6 +89,19 @@ function makeContext(today) {
   };
 }
 
+function renderTooNew() {
+  root.replaceChildren(
+    h(
+      'section',
+      { class: 'card' },
+      h('h2', { class: 'card-title' }, '請先更新 app'),
+      h('p', null, '這台裝置上的資料是由較新版本的 Reset66 建立的,目前的版本無法讀取。資料沒有被更動。'),
+      h('p', { class: 'muted' }, '請連上網路後重新整理;若仍看到這個畫面,請關閉 app 再重新開啟。'),
+      h('button', { class: 'btn btn-primary btn-block', type: 'button', onClick: () => location.reload() }, '重新整理')
+    )
+  );
+}
+
 function render() {
   const today = currentToday();
   app.lastToday = today;
@@ -95,7 +109,11 @@ function render() {
   // Keep keyboard/VoiceOver focus on the same control across re-renders.
   const focusKey = document.activeElement?.dataset?.focusKey;
 
-  if (!app.state) {
+  if (app.loadError === LoadError.TOO_NEW) {
+    // Stored data is from a newer version: show nothing that could write over it.
+    tabbar.hidden = true;
+    renderTooNew();
+  } else if (!app.state) {
     tabbar.hidden = true;
     renderOnboarding(root, makeContext(today));
   } else {

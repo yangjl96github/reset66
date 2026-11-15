@@ -4,7 +4,7 @@ import { isValidDateStr } from './dates.js';
 import { LogStatus } from './progress.js';
 import { DEFAULT_HABIT_XP } from './xp.js';
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 export const ALL_DAYS = Object.freeze([0, 1, 2, 3, 4, 5, 6]);
 
 export const DEFAULT_PROGRAM = Object.freeze({
@@ -81,6 +81,7 @@ export function createInitialState({ startDate, habits = [], program = {} }) {
     habits: habits.map((h) => ({ ...h, days: [...h.days] })),
     logs: {},
     profile: { bonusXp: 0 },
+    meta: { lastExportAt: null },
   };
 }
 

@@ -1,6 +1,5 @@
-// localStorage persistence. M2 scope: load/save with a basic shape check.
-// M3 adds schema migrations and JSON import/export.
-import { isValidDateStr } from './logic/dates.js';
+// localStorage persistence: load (parse → migrate → validate), save.
+import { SchemaErrorCode, upgradeState } from './logic/schema.js';
 
 export const STORAGE_KEY = 'reset66.v1';
 const CORRUPT_PREFIX = `${STORAGE_KEY}.corrupt.`;
@@ -8,22 +7,10 @@ const CORRUPT_PREFIX = `${STORAGE_KEY}.corrupt.`;
 export const LoadError = Object.freeze({
   UNAVAILABLE: 'unavailable', // storage blocked (e.g. private mode)
   CORRUPT: 'corrupt', // unreadable data; raw copy preserved under a backup key
+  TOO_NEW: 'tooNew', // written by a newer app version; left untouched until the app updates
 });
 
-function looksLikeState(value) {
-  return (
-    value !== null &&
-    typeof value === 'object' &&
-    Number.isInteger(value.schemaVersion) &&
-    value.program &&
-    isValidDateStr(value.program.startDate) &&
-    Array.isArray(value.habits) &&
-    value.logs !== null &&
-    typeof value.logs === 'object'
-  );
-}
-
-/** @returns {{state: object|null, error?: string, backupKey?: string}} */
+/** @returns {{state: object|null, error?: string, backupKey?: string, migratedFrom?: number}} */
 export function loadState() {
   let raw;
   try {
@@ -33,21 +20,36 @@ export function loadState() {
   }
   if (raw === null) return { state: null };
 
+  let parsed;
+  let result;
   try {
-    const parsed = JSON.parse(raw);
-    if (!looksLikeState(parsed)) throw new Error('Unexpected shape');
-    return { state: parsed };
+    parsed = JSON.parse(raw);
+    result = upgradeState(parsed);
   } catch {
-    // Never silently overwrite unreadable data: keep a copy before the app starts fresh.
-    const backupKey = `${CORRUPT_PREFIX}${new Date().toISOString()}`;
-    try {
-      localStorage.setItem(backupKey, raw);
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      return { state: null, error: LoadError.UNAVAILABLE };
-    }
-    return { state: null, error: LoadError.CORRUPT, backupKey };
+    result = { ok: false, code: SchemaErrorCode.INVALID };
   }
+
+  if (result.ok) {
+    if (result.migrated) {
+      // Persist the upgrade right away so the stored copy always matches what the app runs on.
+      saveState(result.state);
+      return { state: result.state, migratedFrom: parsed.schemaVersion };
+    }
+    return { state: result.state };
+  }
+
+  // Newer data must never be moved or overwritten by an older app; the caller blocks the UI.
+  if (result.code === SchemaErrorCode.TOO_NEW) return { state: null, error: LoadError.TOO_NEW };
+
+  // Never silently overwrite unreadable data: keep a copy before the app starts fresh.
+  const backupKey = `${CORRUPT_PREFIX}${new Date().toISOString()}`;
+  try {
+    localStorage.setItem(backupKey, raw);
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    return { state: null, error: LoadError.UNAVAILABLE };
+  }
+  return { state: null, error: LoadError.CORRUPT, backupKey };
 }
 
 /** @returns {boolean} true when written */

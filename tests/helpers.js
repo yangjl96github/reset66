@@ -19,7 +19,7 @@ export function habit(id, overrides = {}) {
 
 export function makeState({ habits = [habit('a'), habit('b')], logs = {}, program = {} } = {}) {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     program: {
       startDate: START,
       targetDays: 66,
@@ -31,6 +31,7 @@ export function makeState({ habits = [habit('a'), habit('b')], logs = {}, progra
     habits,
     logs,
     profile: { bonusXp: 0 },
+    meta: { lastExportAt: null },
   };
 }
 
