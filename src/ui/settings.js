@@ -1,7 +1,8 @@
-// Settings (M2: read-only programme info + version). Export/import arrives in M3.
+// Settings: programme info, backup (export/import), storage persistence and version.
 import { h } from './dom.js';
 import { shortDate } from './format.js';
 import { PersistStatus } from '../persist.js';
+import { ExportResult, exportBackup } from './backup.js';
 
 function row(label, value) {
   return h('div', { class: 'kv' }, h('span', { class: 'muted' }, label), h('span', null, value));
@@ -25,6 +26,41 @@ function storageCard(status) {
   );
 }
 
+function backupCard(ctx) {
+  const { lastExportAt } = ctx.state.meta;
+  let busy = false;
+  const exportBtn = h(
+    'button',
+    {
+      class: 'btn btn-primary btn-block',
+      type: 'button',
+      dataset: { focusKey: 'export' },
+      onClick: async () => {
+        if (busy) return;
+        busy = true;
+        try {
+          const result = await exportBackup(ctx);
+          if (result === ExportResult.SAVED) ctx.toast('已匯出備份');
+        } catch (err) {
+          console.error(err);
+          ctx.toast('匯出失敗,請再試一次', 'error');
+        } finally {
+          busy = false;
+        }
+      },
+    },
+    '匯出備份'
+  );
+  return h(
+    'section',
+    { class: 'card' },
+    h('h2', { class: 'card-title' }, '備份'),
+    row('上次匯出', lastExportAt ? shortDate(lastExportAt) : '尚未匯出過'),
+    h('p', { class: 'hint' }, '資料只存在這台裝置。匯出的 JSON 檔可存到「檔案」App 或電腦,換手機或清除資料時用來還原。'),
+    exportBtn
+  );
+}
+
 export function renderSettings(root, ctx) {
   const { program } = ctx.state;
   root.replaceChildren(
@@ -38,12 +74,7 @@ export function renderSettings(root, ctx) {
       row('寬容', program.graceDays > 0 ? `每 7 天可漏 ${program.graceDays} 天` : '嚴格模式'),
       row('完成日門檻', `${Math.round(program.completionThreshold * 100)}%`)
     ),
-    h(
-      'section',
-      { class: 'card' },
-      h('h2', { class: 'card-title' }, '備份'),
-      h('p', { class: 'muted' }, '匯出/匯入 JSON 備份將在下一版加入。資料目前只存在這台裝置。')
-    ),
+    backupCard(ctx),
     storageCard(ctx.persistStatus),
     h('section', { class: 'card' }, h('h2', { class: 'card-title' }, '關於'), row('版本', ctx.versionLabel()))
   );
