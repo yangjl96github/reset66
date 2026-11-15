@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Original Reset66 mark: open progress ring + check. Mirrors tools/make-icons.ps1 geometry. -->
+  <rect width="512" height="512" rx="112" fill="#12151c"/>
+  <!-- Ring: r=154, stroke 36, 300deg arc with the gap centred at 12 o'clock -->
+  <path d="M 333 122.6 A 154 154 0 1 1 179 122.6"
+        fill="none" stroke="#8b7bff" stroke-width="36" stroke-linecap="round"/>
+  <polyline points="192,262 238,308 324,212"
+            fill="none" stroke="#4fd1a5" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
