@@ -76,6 +76,12 @@ PM 拆 WBS → 建 Issues → DEV 在分支 mN 實作 + UT → 開 PR
 - 每個 Issue 寫清楚:目的、範圍、驗收標準。
 - **repo 是公開的**:Issue 內不貼含真實習慣紀錄的截圖或資料,需要附資料時用測試資料。
 
+### 瀏覽器測試規則(DEV / QA / UAT)
+- 內建瀏覽器的下載與檔案對話框會出現在 **Gerald 的桌面**。測試匯出/下載時**不得觸發真的下載**:先在頁面內攔截(例如覆寫 `HTMLAnchorElement.prototype.click` 或 `URL.createObjectURL`,把 Blob 內容讀出來驗證),測完還原。
+- 測試匯入時用 JS 建立 `File` 物件餵給 `<input type="file">`,不要開啟系統的檔案選擇視窗。
+- 測試只用測試資料;結束時清除該網域的 `localStorage`、Service Worker 與快取。
+- 測試用的暫時設定(如 `.claude/launch.json` 新增項目)用完必須還原、不得 commit。
+
 ## 5. 上線檢查表(PM merge 前逐項確認)
 
 - [ ] `npm test` 全綠
