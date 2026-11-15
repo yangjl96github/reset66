@@ -76,7 +76,7 @@ reset66/
 
 ```jsonc
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,                // v2(M3)新增 meta;遷移見 src/logic/schema.js
   "program": {
     "startDate": "2026-11-16",      // YYYY-MM-DD,本地時區
     "targetDays": 66,
@@ -99,7 +99,8 @@ reset66/
   "logs": {
     "2026-11-16": { "h_xxxx": "done" }   // done | skipped(skipped 不計入分母)
   },
-  "profile": { "bonusXp": 0 }            // 其餘 XP 由 logs 推導,不重複存
+  "profile": { "bonusXp": 0 },           // 其餘 XP 由 logs 推導,不重複存
+  "meta": { "lastExportAt": null }       // 最近一次成功匯出的日期(用於 14 天提醒)
 }
 ```
 
@@ -155,9 +156,9 @@ reset66/
 - **驗收**:可在手機上完整走完「建立計畫 → 勾選一天 → 看到 XP 與 streak 變化」。
 
 ### M3 — 持久化與備份
-- [ ] `store.js`:讀寫、`schemaVersion` 遷移機制
-- [ ] 設定頁:匯出 JSON(下載/分享)、匯入 JSON(含驗證與覆蓋確認)
-- [ ] 請求 `navigator.storage.persist()`
+- [x] `store.js`:讀寫、`schemaVersion` 遷移機制
+- [x] 設定頁:匯出 JSON(下載/分享)、匯入 JSON(含驗證與覆蓋確認)
+- [x] 請求 `navigator.storage.persist()`
 - **驗收**:匯出 → 清空 → 匯入後狀態完全一致;損毀的 JSON 不會讓 app 崩潰。
 
 ### M4 — 統計與打磨
