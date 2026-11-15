@@ -165,7 +165,8 @@ reset66/
 - [ ] 日曆熱圖(過去 66+ 天)
 - [ ] 各習慣完成率
 - [ ] 升級/結業動畫(輕量 CSS)、深色主題微調、安全區域(safe-area)處理
-- **驗收**:iPhone 瀏海/Home 指示條不遮擋內容;Lighthouse PWA 檢查通過。
+- **驗收**:iPhone 瀏海/Home 指示條不遮擋內容;可安裝性檢查通過(原「Lighthouse PWA 檢查」;Lighthouse v12 起已移除 PWA 類別,改由 QA 檢查,見 `docs/wbs/M4.md` D1)。
+- 另含 M3 UAT 建議與資料救援(#9),細節見 `docs/wbs/M4.md`。
 
 ### M5 — 選配
 - [ ] Google Sheets 備份:Apps Script Web App 接收 JSON,寫入試算表(使用者自己的專案,單向備份即可)

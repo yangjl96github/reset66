@@ -23,7 +23,8 @@
 | `0.2.0 · reset66-v2` | M2 基本 UI | `61322a0` | M1 是純邏輯,無獨立版本 |
 | `0.3.0 · reset66-v3` | M3 持久化與備份 | `fe59430` | schema v2 |
 | `0.4.0 · reset66-v4`(預定) | M4 統計與打磨 | — | |
-| M4 / M5 | Milestone 已建立,尚未拆 WBS;M4 已有 #9(損毀副本可下載);M5 的 Sheets 備份是否要做,待 M4 完成後問 Gerald |
+| M4 | **進行中**:Gerald 2026-11-15 同意開工;WBS `docs/wbs/M4.md` 已核准,Issues #9–#17;尚未派工 DEV |
+| M5 | Milestone 已建立;Sheets 備份是否要做,待 M4 完成後問 Gerald |
 
 ## 2. 角色與運作(摘要,完整見 `docs/process.md`)
 - Gerald = Sponsor:只處理重大決策(尤其影響 GitHub 公開內容的事)、iPhone UAT、里程碑結案。他不熟這類開發架構,**PM 交談需擔任技術顧問**,用白話說明並給明確建議。
@@ -43,6 +44,7 @@
 | 2026-11-15 | QA 對自己帳號的 PR 無法按 Approve,改以 review comment 首行 `QA verdict: APPROVED` 作為核准依據 |
 | 2026-11-15 | M3 由 Gerald 結案;對外溝通一律寫出版本號(`0.3.0 · reset66-v3` 格式,見 `docs/process.md`) |
 | 2026-11-15 | Merge 用 merge commit(非 squash),以便 `git revert -m 1` 回滾;已 merge 的里程碑分支暫不刪(刪除需 Gerald 同意) |
+| 2026-11-15 | Gerald 同意開始 M4;PM 決策 D1–D6 見 `docs/wbs/M4.md`(Lighthouse PWA 驗收改為可安裝性檢查、熱圖 12 週、完成率分母不含今天、慶祝不存狀態、#9 擴大為資料救援、「防止自動清除」用語) |
 
 ## 4. 環境注意事項
 - 本機:Windows 11 ARM64;Git、Node 26、`gh`(已登入 `yangjl96github`)都已安裝,但**舊交談的 PowerShell PATH 可能沒有**:用 `$env:Path = [Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [Environment]::GetEnvironmentVariable('Path','User')`,或 Bash 加 `export PATH="$PATH:/c/Program Files/GitHub CLI"`。PowerShell 用 `npm.cmd` / `npx.cmd`。
@@ -52,16 +54,17 @@
 - Commit 訊息結尾需加 `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`。
 
 ## 5. 進行中 / 下一步
-1. **開發暫停在 M3**(Gerald 指示),未經他同意不開始 M4。
+1. **M4 進行中**(目標 `0.4.0 · reset66-v4`):WBS 與 Issues #9–#17 已建立;下一步派工 DEV(開 DEV 交談前提醒 Gerald 暫停 OneDrive 同步)。
 2. ~~提醒 Gerald 匯出備份~~:已完成(2026-11-15,iPhone `0.3.0 · reset66-v3` 設定頁「上次匯出 11/15」,分享面板路徑正常)。
-3. M4 開工時:拆 WBS(`docs/wbs/M4.md`),把 UAT 的 UX 建議開成 Issue(匯入預覽並列現有資料、自動備份可見/可還原併 #9、「從備份還原」位置上移、錯誤頁兩顆按鈕、「持久化儲存」用語、提醒跳轉後的焦點)。
+3. ~~M4 拆 WBS、UAT UX 建議開 Issue~~:已完成(#14、#15,自動備份併入 #9)。
 4. M5 Sheets 備份是否要做,M4 完成後問 Gerald。
 5. 所有回報依 `docs/process.md`「版本號」規則寫出版本號。
 
 ## 6. 交談清單
 | 角色 | 交談 | 狀態 |
 |---|---|---|
-| PM | PM #1 | M3 結案,建議開新的 PM 交談承接 |
+| PM | PM #1 | M3 結案,已由 PM #2 承接 |
+| PM | PM #2 | 2026-11-15 承接;M4 拆 WBS、建 Issues |
 | DEV | `m3-dev`(local_bbcf4ed3…) | M3 完成,閒置 |
 | QA | `m3-qa`(local_9c0d3c35…) | M3 完成,閒置 |
 | UAT | `m3-uat` | M3 完成,閒置 |
