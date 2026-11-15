@@ -39,6 +39,13 @@ describe('service worker precache', () => {
     expect(missing).toEqual([]);
   });
 
+  it('precaches with cache: reload so a new worker never stores stale HTTP-cached files', () => {
+    const source = readFileSync(join(ROOT, 'sw.js'), 'utf8');
+    const install = /addEventListener\('install'[\s\S]*?\n\}\);/.exec(source)[0];
+    expect(install).toMatch(/cache\.addAll\(\s*PRECACHE\.map\(\s*\(url\)\s*=>\s*new Request\(url,\s*\{\s*cache:\s*'reload'\s*\}\)\s*\)\s*\)/);
+    expect(install).not.toMatch(/cache\.addAll\(\s*PRECACHE\s*\)/);
+  });
+
   it('uses the version from src/version.js in package.json', async () => {
     const { APP_VERSION } = await import('../src/version.js');
     const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
