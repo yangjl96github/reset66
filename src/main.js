@@ -8,6 +8,7 @@ import { renderToday } from './ui/today.js';
 import { renderHabits } from './ui/habits.js';
 import { renderSettings } from './ui/settings.js';
 import { h } from './ui/dom.js';
+import { ensurePersistentStorage } from './persist.js';
 
 const root = document.getElementById('app');
 const tabbar = document.getElementById('tabbar');
@@ -21,6 +22,7 @@ const app = {
   viewDate: null, // date being viewed on the Today page (null = today)
   lastToday: null,
   swCache: null,
+  persistStatus: null, // null until the StorageManager answers
 };
 
 const ROUTES = {
@@ -53,10 +55,19 @@ function toast(message, tone = 'info') {
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2400);
 }
 
+function requestPersistence() {
+  ensurePersistentStorage().then((status) => {
+    app.persistStatus = status;
+    if (app.state && currentRoute() === 'settings') render();
+  });
+}
+
 function commit(next) {
+  const firstSave = !app.state;
   app.state = next;
   if (!saveState(next)) toast('無法寫入儲存空間,這次變更可能不會保留', 'error');
   render();
+  if (firstSave) requestPersistence();
 }
 
 function navigate(route) {
@@ -86,6 +97,9 @@ function makeContext(today) {
     toast,
     newId,
     versionLabel,
+    get persistStatus() {
+      return app.persistStatus;
+    },
   };
 }
 
@@ -179,4 +193,5 @@ async function registerServiceWorker() {
 }
 
 render();
+if (app.state) requestPersistence();
 registerServiceWorker();

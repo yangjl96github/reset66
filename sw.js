@@ -11,6 +11,7 @@ const PRECACHE = [
   './src/main.js',
   './src/version.js',
   './src/store.js',
+  './src/persist.js',
   './src/logic/dates.js',
   './src/logic/progress.js',
   './src/logic/streak.js',
