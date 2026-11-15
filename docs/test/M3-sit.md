@@ -13,6 +13,7 @@
 | `npm test` | 204 / 204 通過(11 個檔案) |
 | 發現缺陷 | 0(另有 4 項觀察,見文末,皆非阻擋) |
 | 結論 | **通過**:M3 驗收標準 1、2、3、5 與 WBS M3-6 要求的範圍皆通過;驗收標準 4(iPhone 分享選單/「檔案」App)留待 UAT |
+| 回歸(84464ff) | **3 / 3 通過**(SIT-20、21、22 重測);`npm test` 205 / 205,見文末「Regression after 84464ff」 |
 
 ## 測試方法
 
@@ -63,5 +64,20 @@
 ## 觀察事項(非缺陷,不阻擋 merge)
 1. **載入時的嚴格驗證可能讓資料「看起來消失」**:M2 的 `looksLikeState` 很寬鬆,v2 的 `validateState` 嚴格。若手機上的 v1 資料有任何欄位不合規,升級後會被移到 `reset66.v1.corrupt.<ISO>`,使用者看到引導頁,而 iPhone 上沒有任何介面能取回損毀副本。已確認 `main` 的 `createHabit` / `normalizeHabitInput` / `archiveHabit` 產生的資料都符合 v2 驗證,所以由 M2 介面建立的資料不會觸發。但 0.2.0 沒有匯出功能,merge 前無法先備份。建議:引導頁的損毀提示加一個「下載損毀副本」按鈕(後續里程碑)。
 2. **匯出成功是推定的**:下載路徑在觸發下載後就更新 `lastExportAt`;分享失敗(非 `AbortError`)時改用下載,這時已經過了 `await`,可能失去 user activation,iOS 有可能不下載,但仍會記錄為已匯出、提醒消失。請 UAT 在 iPhone 確認。
-3. **`sw.js` 的 `cache.addAll` 使用預設 HTTP 快取模式**(M1 起就是這樣):GitHub Pages 會回 `max-age=600`,理論上 10 分鐘內抓過的舊檔可能被放進新快取。手機平常由 SW 快取供檔,所以風險很低。建議之後改用 `new Request(url, { cache: 'reload' })`。
+3. ~~**`sw.js` 的 `cache.addAll` 使用預設 HTTP 快取模式**~~ → 已由 84464ff 修正(見下方回歸)。
 4. **Unit test 缺口**(SIT 已補驗):`main.js` 的 `importState`「先備份、後覆蓋」順序沒有 UT(SIT-14 驗過);沒有用 `main` 分支實際產生器產生的 v1 fixture(SIT-10 / 21 驗過);`loadState` 遷移後寫回失敗的路徑沒有 UT。
+
+## Regression after 84464ff
+
+- 範圍:`fix(M3): precache bypasses HTTP cache`。`sw.js` install 改為 `cache.addAll(PRECACHE.map((url) => new Request(url, { cache: 'reload' })))`,`tests/sw.test.js` 新增 1 個案例。`CACHE_VERSION` 維持 v3:v3 還沒上線,`main` 仍是 v2,所以手機一定會換快取,這樣是正確的。
+- 程式碼審查:沒有問題。Cache Storage 以 URL 比對,`Request` 的 cache mode 不影響 `caches.match`;fetch handler 與 activate 都沒有改動。
+- 日期:2026-11-15 ・ 受測版本:`m3` @ `84464ff` ・ 環境、方法與正式 SIT 相同(獨立 origin `localhost:8003`,暫時加入的 `qa-upgrade` launch 設定已還原,未 commit)。
+
+| ID | 案例 | 實際結果 | 結果 |
+|---|---|---|---|
+| R-01 | `npm test` | 205 / 205(11 個檔案) | 通過 |
+| R-02(SIT-21) | 升級路徑:`main` 0.2.0 + `reset66-v2`(25 項)+ v1 測試資料 → 部署 84464ff 的檔案 → 重新整理 | 新 SW 接管並自動 reload;0.3.0;只剩 `reset66-v3`(29 項,含 4 個新模組、`index.html`、icons);資料與預期 v2 deep equal;沒有損毀副本 | 通過 |
+| R-03(SIT-22) | 停止伺服器(fetch 確認失敗)→ 重新整理 `#/settings` → 匯出 → 匯入預覽 → 習慣頁 | 全部可用,版本 0.3.0 | 通過 |
+| R-04(SIT-20) | 乾淨 origin(先解除 SW、刪除快取並關閉分頁)→ 首次載入 | `reset66-v3` 含 29 項(含 `./` 與 `index.html`);伺服器 log 顯示 install 時 PRECACHE 的 29 個檔案都向伺服器發出請求,即使頁面剛載入過同樣的檔案 | 通過 |
+
+測試結束後已清除 8003 origin 的 `localStorage`、`sessionStorage`、service worker 與快取。
