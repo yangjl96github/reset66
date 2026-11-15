@@ -2,7 +2,7 @@
 import { h } from './dom.js';
 import { shortDate } from './format.js';
 import { PersistStatus } from '../persist.js';
-import { ExportResult, exportBackup } from './backup.js';
+import { ExportResult, exportBackup, importButton } from './backup.js';
 
 function row(label, value) {
   return h('div', { class: 'kv' }, h('span', { class: 'muted' }, label), h('span', null, value));
@@ -57,7 +57,8 @@ function backupCard(ctx) {
     h('h2', { class: 'card-title' }, '備份'),
     row('上次匯出', lastExportAt ? shortDate(lastExportAt) : '尚未匯出過'),
     h('p', { class: 'hint' }, '資料只存在這台裝置。匯出的 JSON 檔可存到「檔案」App 或電腦,換手機或清除資料時用來還原。'),
-    exportBtn
+    exportBtn,
+    importButton(ctx)
   );
 }
 

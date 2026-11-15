@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { LoadError, STORAGE_KEY, loadState, saveState } from '../src/store.js';
+import { BACKUP_KEEP, BACKUP_PREFIX, LoadError, STORAGE_KEY, listBackupKeys, loadState, saveState, snapshotCurrentData } from '../src/store.js';
 import { makeState } from './helpers.js';
 
 /** Minimal in-memory Storage. */
@@ -87,5 +87,41 @@ describe('saveState', () => {
     const state = makeState();
     expect(saveState(state)).toBe(true);
     expect(JSON.parse(storage.getItem(STORAGE_KEY))).toEqual(state);
+  });
+});
+
+describe('snapshotCurrentData', () => {
+  const at = (n) => new Date(Date.UTC(2026, 10, 20, 12, 0, n));
+
+  it('copies the stored data to a timestamped backup key', () => {
+    storage.setItem(STORAGE_KEY, '{"x":1}');
+    const result = snapshotCurrentData(at(0));
+    expect(result).toEqual({ ok: true, key: `${BACKUP_PREFIX}2026-11-20T12:00:00.000Z` });
+    expect(storage.getItem(result.key)).toBe('{"x":1}');
+  });
+
+  it('does nothing when there is no current data', () => {
+    expect(snapshotCurrentData(at(0))).toEqual({ ok: true, key: null });
+    expect(storage.length).toBe(0);
+  });
+
+  it(`keeps only the latest ${BACKUP_KEEP} backups`, () => {
+    storage.setItem('reset66.v1.corrupt.2026-01-01T00:00:00.000Z', 'keep me');
+    for (let i = 0; i < 5; i++) {
+      storage.setItem(STORAGE_KEY, `{"n":${i}}`);
+      snapshotCurrentData(at(i));
+    }
+    const keys = listBackupKeys();
+    expect(keys).toHaveLength(BACKUP_KEEP);
+    expect(keys.map((k) => storage.getItem(k))).toEqual(['{"n":4}', '{"n":3}', '{"n":2}']);
+    expect(storage.getItem('reset66.v1.corrupt.2026-01-01T00:00:00.000Z')).toBe('keep me');
+  });
+
+  it('reports failure when storage refuses the copy', () => {
+    storage.setItem(STORAGE_KEY, '{"x":1}');
+    storage.setItem = () => {
+      throw new Error('QuotaExceededError');
+    };
+    expect(snapshotCurrentData(at(0))).toEqual({ ok: false, key: null });
   });
 });

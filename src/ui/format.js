@@ -32,3 +32,11 @@ export function daysUntil(today, date) {
 export function formatNumber(n) {
   return new Intl.NumberFormat('zh-Hant').format(n);
 }
+
+/** "2026/11/20 21:05" in local time; null for unparseable input. */
+export function dateTimeLabel(iso) {
+  const dt = new Date(iso);
+  if (Number.isNaN(dt.getTime())) return null;
+  const p = (n) => String(n).padStart(2, '0');
+  return `${dt.getFullYear()}/${p(dt.getMonth() + 1)}/${p(dt.getDate())} ${p(dt.getHours())}:${p(dt.getMinutes())}`;
+}

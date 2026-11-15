@@ -61,3 +61,35 @@ export function saveState(state) {
     return false;
   }
 }
+
+// Pre-import snapshots of the current data, newest first; only the latest BACKUP_KEEP are kept.
+export const BACKUP_PREFIX = `${STORAGE_KEY}.backup.`;
+export const BACKUP_KEEP = 3;
+
+/** Backup keys, newest first (ISO timestamps sort chronologically). */
+export function listBackupKeys() {
+  const keys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(BACKUP_PREFIX)) keys.push(key);
+  }
+  return keys.sort().reverse();
+}
+
+/**
+ * Copy the stored data to `reset66.v1.backup.<ISO>` before it gets overwritten.
+ * @param {Date} now
+ * @returns {{ok: boolean, key: string|null}} ok=false means the copy could not be written
+ */
+export function snapshotCurrentData(now) {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw === null) return { ok: true, key: null };
+    const key = `${BACKUP_PREFIX}${now.toISOString()}`;
+    localStorage.setItem(key, raw);
+    for (const old of listBackupKeys().slice(BACKUP_KEEP)) localStorage.removeItem(old);
+    return { ok: true, key };
+  } catch {
+    return { ok: false, key: null };
+  }
+}

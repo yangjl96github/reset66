@@ -1,6 +1,6 @@
 // Entry point: state ownership, routing, rendering and service worker registration.
 import { APP_VERSION } from './version.js';
-import { LoadError, loadState, saveState } from './store.js';
+import { LoadError, loadState, saveState, snapshotCurrentData } from './store.js';
 import { logicalDate } from './logic/dates.js';
 import { DEFAULT_PROGRAM } from './logic/state.js';
 import { renderOnboarding } from './ui/onboarding.js';
@@ -70,6 +70,23 @@ function commit(next) {
   if (firstSave) requestPersistence();
 }
 
+/**
+ * Replace all data with an imported state. The current stored data is copied to a
+ * backup key first; if that copy cannot be written, nothing is overwritten.
+ * @returns {boolean} true when the import was saved
+ */
+function importState(next) {
+  if (!snapshotCurrentData(new Date()).ok) return false;
+  if (!saveState(next)) return false;
+  const firstSave = !app.state;
+  app.state = next;
+  app.loadError = null;
+  app.viewDate = null;
+  navigate('today');
+  if (firstSave) requestPersistence();
+  return true;
+}
+
 function navigate(route) {
   const hash = `#/${route}`;
   if (location.hash === hash) render();
@@ -93,6 +110,7 @@ function makeContext(today) {
       render();
     },
     commit,
+    importState,
     navigate,
     toast,
     newId,
